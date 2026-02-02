@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: "Final fact table for sales analysis."
+    columns:
+      - name: order_key
+        description: "Primary key of the order."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_customers
+    description: "Dimension table for customers."
+    columns:
+      - name: customer_key
+        tests:
+          - unique
+          - not_null
