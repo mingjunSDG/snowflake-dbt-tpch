@@ -9,8 +9,8 @@ lineitem as (
 select
     l.order_key,
     l.part_key,
-    l.supplier_key,    -- Add this for your new dimension!
-    l.line_number,     -- This is the missing piece for your ID
+    l.supplier_key,
+    l.line_number,
     o.customer_key,
     o.order_date,
     l.quantity,
