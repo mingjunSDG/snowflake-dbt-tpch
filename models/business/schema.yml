@@ -17,3 +17,19 @@ models:
         tests:
           - unique
           - not_null
+          
+  - name: dim_parts
+    description: "Dimension table for parts/products."
+    columns:
+      - name: part_key
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_suppliers
+    description: "Dimension table for suppliers, including geographic region."
+    columns:
+      - name: supplier_key
+        tests:
+          - unique
+          - not_null
