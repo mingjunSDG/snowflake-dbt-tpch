@@ -1,9 +1,3 @@
-{{
-    config(
-        materialized='view'
-    )
-}}
-
 with orders as (
     select * from {{ ref('stg_tpch_orders') }}
 ),
@@ -14,12 +8,16 @@ lineitem as (
 
 select
     l.order_key,
+    l.part_key,
+    l.supplier_key,
+    l.line_number,
     o.customer_key,
     o.order_date,
-    l.part_key,
     l.quantity,
     l.extended_price,
-    -- Simple business logic: calculating net price
-    (l.extended_price * (1 - l.discount_percentage)) as net_item_price
+    l.tax,
+    l.discount,
+    -- Calculate the net price here to keep fct_orders clean
+    (l.extended_price * (1 - l.discount) * (1 + l.tax)) as net_item_price
 from lineitem l
 join orders o on l.order_key = o.order_key
