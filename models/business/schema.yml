@@ -1,33 +1,61 @@
 version: 2
 
 models:
+
+# --- BUSINESS LAYER ---
   - name: fct_orders
-    description: "Final fact table for sales analysis."
+    description: "Final fact table at the Line Item grain."
     columns:
-      - name: order_key
-        description: "Primary key of the order."
+      # 1. The Real Primary Key of this table
+      - name: fact_order_id
+        description: "Unique key for the line item (order + part)."
         tests:
-          - unique
+          - unique    # <--- This is now your unique key for this table
           - not_null
 
+      # 2. The Link to the Order (Foreign Key)
+      - name: order_key
+        description: "Foreign key linking to the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_key
+              tags: ['integrity_rule']
+
+
+      - name: gross_revenue
+        description: "Gross revenue of the line item."
+        tests:
+          - column_is_positive:
+              tags: ['business_layer', 'business_rule']
+      - name: quantity
+        tests:
+          - column_is_positive
+      
+      - name: discount
+        tests:
+          # Custom check: Discount shouldn't be negative
+          - column_is_positive
   - name: dim_customers
-    description: "Dimension table for customers."
+    description: "Dimension table for customers. Tracked via SCD Type 2."
     columns:
       - name: customer_key
         tests:
           - unique
           - not_null
-          
+
   - name: dim_parts
-    description: "Dimension table for parts/products."
+    description: "Dimension table for parts and products."
     columns:
       - name: part_key
         tests:
           - unique
           - not_null
 
+
   - name: dim_suppliers
-    description: "Dimension table for suppliers, including geographic region."
+    description: "Dimension table for suppliers."
     columns:
       - name: supplier_key
         tests:
