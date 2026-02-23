@@ -194,9 +194,11 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_tpch_orders') # Note: ensure this matches your staging model name
-              field: order_key
-              tags: ['integrity_rule']
+              arguments:             
+                to: ref('stg_tpch_orders')
+                field: order_key
+              config:                
+                tags: ['integrity_rule']
               
       - name: customer_key
         description: "Foreign key linking to dim_customers."
@@ -214,7 +216,8 @@ models:
         description: "Gross revenue of the line item (extended_price)."
         tests:
           - column_is_positive:
-              tags: ['business_layer', 'business_rule']
+              config:                
+                tags: ['business_layer', 'business_rule']
               
       - name: quantity
         description: "The number of units sold."
