@@ -177,15 +177,15 @@ models:
         
       - name: net_item_price
         description: "The final calculated price of the line item after all adjustments. Formula: extended_price * (1 - discount) * (1 + tax)."
-# --- BUSINESS LAYER ---
+  # --- BUSINESS LAYER ---
   - name: fct_orders
-    description: "Final fact table at the Line Item grain."
+    description: "Final fact table at the Line Item grain. Central fact table for sales transactions."
     columns:
       # 1. The Real Primary Key of this table
       - name: fact_order_id
         description: "Unique key for the line item (order + part)."
         tests:
-          - unique    # <--- This is now your unique key for this table
+          - unique
           - not_null
 
       # 2. The Link to the Order (Foreign Key)
@@ -194,45 +194,111 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_orders')
+              to: ref('stg_tpch_orders') # Note: ensure this matches your staging model name
               field: order_key
               tags: ['integrity_rule']
-
+              
+      - name: customer_key
+        description: "Foreign key linking to dim_customers."
+        
+      - name: part_key
+        description: "Foreign key linking to dim_parts."
+        
+      - name: supplier_key
+        description: "Foreign key linking to dim_suppliers."
+        
+      - name: order_date
+        description: "The date the transaction took place."
 
       - name: gross_revenue
-        description: "Gross revenue of the line item."
+        description: "Gross revenue of the line item (extended_price)."
         tests:
           - column_is_positive:
               tags: ['business_layer', 'business_rule']
+              
       - name: quantity
+        description: "The number of units sold."
         tests:
           - column_is_positive
+          
+      - name: net_revenue
+        description: "Actual revenue realized after discounts and taxes are applied."
+        
+      - name: tax
+        description: "Tax rate applied to the transaction."
       
       - name: discount
+        description: "Discount rate applied to the transaction."
         tests:
           # Custom check: Discount shouldn't be negative
           - column_is_positive
+
+  # ==========================================
+  # DIMENSION: CUSTOMERS
+  # ==========================================
   - name: dim_customers
     description: "Dimension table for customers. Tracked via SCD Type 2."
     columns:
       - name: customer_key
+        description: "Primary key for the customer."
         tests:
           - unique
           - not_null
+      - name: customer_name
+        description: "Full name of the customer."
+      - name: address
+        description: "Physical address of the customer."
+      - name: phone_number
+        description: "Contact phone number."
+      - name: market_segment
+        description: "The business segment the customer belongs to (e.g., AUTOMOBILE, MACHINERY)."
 
+  # ==========================================
+  # DIMENSION: PARTS
+  # ==========================================
   - name: dim_parts
     description: "Dimension table for parts and products."
     columns:
       - name: part_key
+        description: "Primary key for the part."
         tests:
           - unique
           - not_null
+      - name: part_name
+        description: "Name of the part/product."
+      - name: manufacturer
+        description: "Manufacturer of the part."
+      - name: brand
+        description: "Brand associated with the part."
+      - name: part_type
+        description: "Categorization of the part type."
+      - name: part_size
+        description: "Physical size of the part."
+      - name: container
+        description: "Type of container the part is shipped in."
+      - name: retail_price
+        description: "Standard retail price for the part."
 
-
+  # ==========================================
+  # DIMENSION: SUPPLIERS
+  # ==========================================
   - name: dim_suppliers
-    description: "Dimension table for suppliers."
+    description: "Dimension table for suppliers enriched with geographic data."
     columns:
       - name: supplier_key
+        description: "Primary key for the supplier."
         tests:
           - unique
           - not_null
+      - name: supplier_name
+        description: "Name of the supplier."
+      - name: address
+        description: "Physical address of the supplier."
+      - name: nation_name
+        description: "The country where the supplier is located."
+      - name: region_name
+        description: "The broader geographical region of the supplier."
+      - name: phone_number
+        description: "Contact phone number for the supplier."
+      - name: account_balance
+        description: "Current account balance of the supplier."
