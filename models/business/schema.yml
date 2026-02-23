@@ -141,6 +141,42 @@ models:
         
       - name: account_balance
         description: "Current account balance of the supplier."
+# --- TRANSFORMATION LAYER ---
+  - name: int_order_details  
+    description: "Transformation model joining orders and line items. Serves as the base for sales analysis by calculating the net item price."
+    columns:
+      - name: order_key
+        description: "Foreign key linking to the order."
+        
+      - name: part_key
+        description: "Foreign key linking to the part/product."
+        
+      - name: supplier_key
+        description: "Foreign key linking to the supplier."
+        
+      - name: line_number
+        description: "The sequence number of the item within its specific order."
+        
+      - name: customer_key
+        description: "Foreign key linking to the customer who placed the order."
+        
+      - name: order_date
+        description: "The date the order was placed."
+        
+      - name: quantity
+        description: "The number of units purchased for this specific line item."
+        
+      - name: extended_price
+        description: "The raw price of the line item before discounts or taxes."
+        
+      - name: tax
+        description: "The tax rate applied to this line item."
+        
+      - name: discount
+        description: "The discount rate applied to this line item."
+        
+      - name: net_item_price
+        description: "The final calculated price of the line item after all adjustments. Formula: extended_price * (1 - discount) * (1 + tax)."
 # --- BUSINESS LAYER ---
   - name: fct_orders
     description: "Final fact table at the Line Item grain."
