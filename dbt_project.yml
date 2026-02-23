@@ -37,6 +37,12 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 models:
   my_new_project:
-    # Applies to all files under models/example/
-    example:
-      +materialized: table
+    +grants:
+      select: ['PUBLIC']  
+    # Apply tags to everything in the 'staging' folder
+    staging:
+      +tags: ["staging_layer"]
+      
+    # Apply tags to everything in the 'business' (or 'marts') folder
+    business:
+      +tags: ["business_layer"]

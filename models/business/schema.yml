@@ -1,35 +1,304 @@
 version: 2
 
 models:
-  - name: fct_orders
-    description: "Final fact table for sales analysis."
-    columns:
-      - name: order_key
-        description: "Primary key of the order."
-        tests:
-          - unique
-          - not_null
-
-  - name: dim_customers
-    description: "Dimension table for customers."
+# --- STAGING LAYER ---
+  - name: stg_tpch_customer
+    description: "Staging table for raw customer data."
     columns:
       - name: customer_key
-        tests:
-          - unique
-          - not_null
-          
-  - name: dim_parts
-    description: "Dimension table for parts/products."
+        description: "Primary key for the customer."
+        
+      - name: customer_name
+        description: "Full name of the customer."
+        
+      - name: address
+        description: "Physical address of the customer."
+        
+      - name: nation_key
+        description: "Foreign key linking to the nations table."
+        
+      - name: phone_number
+        description: "Customer's contact phone number."
+        
+      - name: account_balance
+        description: "Current financial balance of the customer's account."
+        
+      - name: market_segment
+        description: "The business segment the customer belongs to (e.g., AUTOMOBILE, MACHINERY)."
+
+  - name: stg_tpch_lineitem
+    description: "Staging table for raw line item data. Contains the individual items that make up each order."
+    columns:
+      - name: order_key
+        description: "Foreign key linking to the orders table."
+        
+      - name: part_key
+        description: "Foreign key linking to the parts/products table."
+        
+      - name: supplier_key
+        description: "Foreign key linking to the supplier table."
+        
+      - name: line_number
+        description: "The sequence number of the item within its specific order."
+        
+      - name: quantity
+        description: "The number of units purchased for this specific line item."
+        
+      - name: extended_price
+        description: "The raw price of the line item (quantity * retail price) before discounts or taxes."
+        
+      - name: tax
+        description: "The tax rate applied to this line item (e.g., 0.08 for 8%)."
+        
+      - name: discount
+        description: "The discount rate applied to this line item (e.g., 0.05 for 5%)."
+        
+      - name: ship_date
+        description: "The date the line item was physically shipped."
+
+  - name: stg_tpch_nations
+    description: "Staging table for raw nations data. Contains country names and their associated regions."
+    columns:
+      - name: nation_key
+        description: "Primary key for the nation."
+        
+      - name: nation_name
+        description: "The name of the nation or country."
+        
+      - name: region_key
+        description: "Foreign key linking to the region the nation belongs to."
+  - name: stg_tpch_orders
+    description: "Staging table for raw orders data."
+    columns:
+      - name: order_key
+        description: "Primary key for the order."
+        
+      - name: customer_key
+        description: "Foreign key linking to the customer who placed the order."
+        
+      - name: status_code
+        description: "Current status of the order (e.g., 'O', 'F', 'P')."
+        
+      - name: total_price
+        description: "Total price of the order."
+        
+      - name: order_date
+        description: "Date the order was placed."
+        
+      - name: priority_code
+        description: "Priority level assigned to the order."
+  - name: stg_tpch_parts
+    description: "Staging table for raw parts/products data."
     columns:
       - name: part_key
+        description: "Primary key for the part."
+        
+      - name: part_name
+        description: "Name of the part."
+        
+      - name: manufacturer
+        description: "Manufacturer of the part."
+        
+      - name: brand
+        description: "Brand associated with the part."
+        
+      - name: part_type
+        description: "Categorization of the part type."
+        
+      - name: part_size
+        description: "Physical size of the part."
+        
+      - name: container
+        description: "Type of container the part is shipped in."
+        
+      - name: retail_price
+        description: "Standard retail price for the part."
+  - name: stg_tpch_regions
+    description: "Staging table for raw regions data."
+    columns:
+      - name: region_key
+        description: "Primary key for the region."
+        
+      - name: region_name
+        description: "Name of the geographical region."
+  - name: stg_tpch_suppliers
+    description: "Staging table for raw suppliers data."
+    columns:
+      - name: supplier_key
+        description: "Primary key for the supplier."
+        
+      - name: supplier_name
+        description: "Name of the supplier."
+        
+      - name: address
+        description: "Physical address of the supplier."
+        
+      - name: nation_key
+        description: "Foreign key linking to the nation the supplier is located in."
+        
+      - name: phone_number
+        description: "Contact phone number for the supplier."
+        
+      - name: account_balance
+        description: "Current account balance of the supplier."
+# --- TRANSFORMATION LAYER ---
+  - name: int_order_details  
+    description: "Transformation model joining orders and line items. Serves as the base for sales analysis by calculating the net item price."
+    columns:
+      - name: order_key
+        description: "Foreign key linking to the order."
+        
+      - name: part_key
+        description: "Foreign key linking to the part/product."
+        
+      - name: supplier_key
+        description: "Foreign key linking to the supplier."
+        
+      - name: line_number
+        description: "The sequence number of the item within its specific order."
+        
+      - name: customer_key
+        description: "Foreign key linking to the customer who placed the order."
+        
+      - name: order_date
+        description: "The date the order was placed."
+        
+      - name: quantity
+        description: "The number of units purchased for this specific line item."
+        
+      - name: extended_price
+        description: "The raw price of the line item before discounts or taxes."
+        
+      - name: tax
+        description: "The tax rate applied to this line item."
+        
+      - name: discount
+        description: "The discount rate applied to this line item."
+        
+      - name: net_item_price
+        description: "The final calculated price of the line item after all adjustments. Formula: extended_price * (1 - discount) * (1 + tax)."
+  # --- BUSINESS LAYER ---
+  - name: fct_orders
+    description: "Final fact table at the Line Item grain. Central fact table for sales transactions."
+    columns:
+      # 1. The Real Primary Key of this table
+      - name: fact_order_id
+        description: "Unique key for the line item (order + part)."
         tests:
           - unique
           - not_null
 
-  - name: dim_suppliers
-    description: "Dimension table for suppliers, including geographic region."
-    columns:
+      # 2. The Link to the Order (Foreign Key)
+      - name: order_key
+        description: "Foreign key linking to the order."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_tpch_orders') # Note: ensure this matches your staging model name
+              field: order_key
+              tags: ['integrity_rule']
+              
+      - name: customer_key
+        description: "Foreign key linking to dim_customers."
+        
+      - name: part_key
+        description: "Foreign key linking to dim_parts."
+        
       - name: supplier_key
+        description: "Foreign key linking to dim_suppliers."
+        
+      - name: order_date
+        description: "The date the transaction took place."
+
+      - name: gross_revenue
+        description: "Gross revenue of the line item (extended_price)."
+        tests:
+          - column_is_positive:
+              tags: ['business_layer', 'business_rule']
+              
+      - name: quantity
+        description: "The number of units sold."
+        tests:
+          - column_is_positive
+          
+      - name: net_revenue
+        description: "Actual revenue realized after discounts and taxes are applied."
+        
+      - name: tax
+        description: "Tax rate applied to the transaction."
+      
+      - name: discount
+        description: "Discount rate applied to the transaction."
+        tests:
+          # Custom check: Discount shouldn't be negative
+          - column_is_positive
+
+  # ==========================================
+  # DIMENSION: CUSTOMERS
+  # ==========================================
+  - name: dim_customers
+    description: "Dimension table for customers. Tracked via SCD Type 2."
+    columns:
+      - name: customer_key
+        description: "Primary key for the customer."
         tests:
           - unique
           - not_null
+      - name: customer_name
+        description: "Full name of the customer."
+      - name: address
+        description: "Physical address of the customer."
+      - name: phone_number
+        description: "Contact phone number."
+      - name: market_segment
+        description: "The business segment the customer belongs to (e.g., AUTOMOBILE, MACHINERY)."
+
+  # ==========================================
+  # DIMENSION: PARTS
+  # ==========================================
+  - name: dim_parts
+    description: "Dimension table for parts and products."
+    columns:
+      - name: part_key
+        description: "Primary key for the part."
+        tests:
+          - unique
+          - not_null
+      - name: part_name
+        description: "Name of the part/product."
+      - name: manufacturer
+        description: "Manufacturer of the part."
+      - name: brand
+        description: "Brand associated with the part."
+      - name: part_type
+        description: "Categorization of the part type."
+      - name: part_size
+        description: "Physical size of the part."
+      - name: container
+        description: "Type of container the part is shipped in."
+      - name: retail_price
+        description: "Standard retail price for the part."
+
+  # ==========================================
+  # DIMENSION: SUPPLIERS
+  # ==========================================
+  - name: dim_suppliers
+    description: "Dimension table for suppliers enriched with geographic data."
+    columns:
+      - name: supplier_key
+        description: "Primary key for the supplier."
+        tests:
+          - unique
+          - not_null
+      - name: supplier_name
+        description: "Name of the supplier."
+      - name: address
+        description: "Physical address of the supplier."
+      - name: nation_name
+        description: "The country where the supplier is located."
+      - name: region_name
+        description: "The broader geographical region of the supplier."
+      - name: phone_number
+        description: "Contact phone number for the supplier."
+      - name: account_balance
+        description: "Current account balance of the supplier."
