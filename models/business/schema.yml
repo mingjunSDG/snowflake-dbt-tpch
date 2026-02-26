@@ -181,14 +181,14 @@ models:
   - name: fct_orders
     description: "Final fact table at the Line Item grain. Central fact table for sales transactions."
     columns:
-      # 1. The Real Primary Key of this table
+      # 1.Primary Key
       - name: fact_order_id
         description: "Unique key for the line item (order + part)."
         tests:
           - unique
           - not_null
 
-      # 2. The Link to the Order (Foreign Key)
+      # 2. Foreign Key
       - name: order_key
         description: "Foreign key linking to the order."
         tests:

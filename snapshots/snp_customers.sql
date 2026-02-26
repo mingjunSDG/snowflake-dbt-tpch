@@ -10,7 +10,7 @@
     )
 }}
 
--- Select the clean data from your staging layer
+
 select * from {{ ref('stg_tpch_customer') }}
 
 {% endsnapshot %}
